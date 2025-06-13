@@ -1,34 +1,36 @@
-`include "player_pos.vh"  // 初始位置宏定义
+`include "player_pos.vh"  // 鲁玫脢录脦禄脰脙潞锚露篓脪氓
 
 module top(
-    input clk,               // 100MHz系统时钟
-    input rst_n,             // 异步复位（低有效）
-    input [3:0] btn,         // 四方向按钮 [上,下,左,右]
-    output [3:0] r, g, b,    // RGB444输出
-    output hs, vs            // 同步信号
+    input clk,               // 100MHz脧碌脥鲁脢卤脰脫
+    input rst_n,             // 脪矛虏陆赂麓脦禄拢篓碌脥脫脨脨搂拢漏
+    input [3:0] btn,         // 脣脛路陆脧貌掳麓脜楼 [脡脧,脧脗,脳贸,脫脪]
+	input ps2_clk,
+	input ps2_data,
+    output [3:0] r, g, b,    // RGB444脢盲鲁枚
+    output hs, vs            // 脥卢虏陆脨脜潞脜
 );
 
-    // === 参数定义 ===
+    // === 虏脦脢媒露篓脪氓 ===
     localparam IMAGE_WIDTH     = 640;
     localparam IMAGE_HEIGHT    = 480;
     localparam CELL_SIZE       = 10;
-    localparam PLAYER_COLOR    = 12'h00F; // 蓝色
-    localparam BEAN_COLOR      = 12'hFF0; // 黄色
+    localparam PLAYER_COLOR    = 12'h00F; // 脌露脡芦
+    localparam BEAN_COLOR      = 12'hFF0; // 禄脝脡芦
     localparam EMPTY           = 1'b0;
 
-    // === VGA 时钟 25MHz ===
+    // === VGA 脢卤脰脫 25MHz ===
     wire clk_25MHz;
     clk_wiz_0 clk_gen (
         .clk_in1(clk),
         .clk_out1(clk_25MHz)
     );
 
-    // === VGA 控制信号 ===
+    // === VGA 驴脴脰脝脨脜潞脜 ===
     wire [8:0] screen_row_addr;
     wire [9:0] screen_col_addr;
     wire vga_pixel_enable;
 
-    // === 地图 ROM 访问 ===
+    // === 碌脴脥录 ROM 路脙脦脢 ===
     reg [18:0] rom_access_addr;
     wire [11:0] rom_data_out;
     reg [11:0] rom_data_buffer;
@@ -47,11 +49,11 @@ module top(
         if (!rst_n)
             rom_access_addr <= 19'd0;
         else if (screen_col_addr < 640 && screen_row_addr < 480)
-            // 替代乘法：row*640 = row*512 + row*128
+            // 脤忙麓煤鲁脣路篓拢潞row*640 = row*512 + row*128
             rom_access_addr <= (screen_row_addr << 9) + (screen_row_addr << 7) + screen_col_addr;
     end
 
-    // === VGA 输出模块 ===
+    // === VGA 脢盲鲁枚脛拢驴茅 ===
    reg [11:0] pixel_rgb;
     VGA vga_unit (
         .vga_clk(clk_25MHz),
@@ -64,7 +66,7 @@ module top(
         .hs(hs), .vs(vs)
     );
 
- //去抖动
+ //脠楼露露露炉
     wire [3:0] btn_debounced;
 
 debounce_all u_debounce (
@@ -73,10 +75,23 @@ debounce_all u_debounce (
     .btn_in(btn),
     .btn_out(btn_debounced)
 );
-    // === 人物移动模块 ===
+
+// This is introducing PS2 keyboard.
+ps2 u_ps2(
+	.clk(clk_25MHz),
+	.rst(!rst_n),
+	.ps2_clk(ps2_clk),
+	.ps2_data(ps2_data),
+	.up(ctrl_up),
+	.left(ctrl_left),
+	.right(ctrl_right),
+	.down(ctrl_down)
+);
+
+// === 脠脣脦茂脪脝露炉脛拢驴茅 ===
     wire [9:0] player_x;
     wire [8:0] player_y;
-     // 人物移动模块（含撞墙判断）
+     // 脠脣脦茂脪脝露炉脛拢驴茅拢篓潞卢脳虏脟陆脜脨露脧拢漏
 player_move #(
     .CELL_SIZE(CELL_SIZE),
     .IMAGE_WIDTH(IMAGE_WIDTH),
@@ -86,7 +101,7 @@ player_move #(
 ) player_ctrl (
     .clk(clk_25MHz),
     .rst_n(rst_n),
-    .btn_udlr( btn_debounced),
+    .btn_udlr({ctrl_up, ctrl_down, ctrl_left, ctrl_right}),
     .player_x(player_x),
     .player_y(player_y)
 
@@ -96,20 +111,20 @@ player_move #(
         (screen_col_addr >= player_x + 3) && (screen_col_addr < player_x + 3 + CELL_SIZE) &&
         (screen_row_addr >= player_y) && (screen_row_addr < player_y + CELL_SIZE);
 
-       // === 豆子 RAM ===
+       // === 露鹿脳脫 RAM ===
     wire [5:0] grid_x = screen_col_addr / CELL_SIZE;
     wire [5:0] grid_y = screen_row_addr / CELL_SIZE;
     wire [5:0] player_cell_x = player_x / CELL_SIZE;
     wire [5:0] player_cell_y = player_y / CELL_SIZE;
 
-    // 引入延迟一拍的人物格子坐标
+    // 脪媒脠毛脩脫鲁脵脪禄脜脛碌脛脠脣脦茂赂帽脳脫脳酶卤锚
     reg [5:0] player_cell_x_r, player_cell_y_r;
     always @(posedge clk_25MHz) begin
         player_cell_x_r <= player_cell_x;
         player_cell_y_r <= player_cell_y;
     end
 
-    // RAM 地址：A口用于显示，B口用于检测和写入
+    // RAM 碌脴脰路拢潞A驴脷脫脙脫脷脧脭脢戮拢卢B驴脷脫脙脫脷录矛虏芒潞脥脨麓脠毛
     wire [18:0] bean_display_addr = grid_y * 64 + grid_x;
     wire [18:0] bean_eat_addr     = player_cell_y_r * 64 + player_cell_x_r;
 
@@ -119,19 +134,19 @@ player_move #(
     reg we, en;
 
 
- // === 吃豆 FSM（改进版：打拍写入） ===
-reg bean_present_d1;  // 打一拍延迟
+ // === 鲁脭露鹿 FSM拢篓赂脛陆酶掳忙拢潞麓貌脜脛脨麓脠毛拢漏 ===
+reg bean_present_d1;  // 麓貌脪禄脜脛脩脫鲁脵
 reg [1:0] eat_state;
 localparam IDLE  = 2'd0,
            WRITE = 2'd1,
            WAIT  = 2'd2;
 
-// 修改后的吃豆 FSM
+// 脨脼赂脛潞贸碌脛鲁脭露鹿 FSM
 always @(posedge clk_25MHz or negedge rst_n) begin
     if (!rst_n) begin
         eat_state <= IDLE;
         we <= 0;
-        en <= 1;  // 保持使能一直有效
+        en <= 1;  // 卤拢鲁脰脢鹿脛脺脪禄脰卤脫脨脨搂
         bean_present_d1 <= 0;
     end else begin
         bean_present_d1 <= bean_present;
@@ -154,7 +169,7 @@ always @(posedge clk_25MHz or negedge rst_n) begin
     end
 end
 
-// 给en_b保持1，保证读写端口总是有效
+// 赂酶en_b卤拢鲁脰1拢卢卤拢脰陇露脕脨麓露脣驴脷脳脺脢脟脫脨脨搂
 reg en_b_reg = 1;
 always @(posedge clk_25MHz or negedge rst_n) begin
     if (!rst_n)
@@ -163,7 +178,7 @@ always @(posedge clk_25MHz or negedge rst_n) begin
         en_b_reg <= 1'b1;
 end
 
-// RAM模块调用时用en_b_reg替代en_b
+// RAM脛拢驴茅碌梅脫脙脢卤脫脙en_b_reg脤忙麓煤en_b
 bean_ram u_bean_ram (
     .clk(clk_25MHz),
     .rst_n(rst_n),
@@ -178,15 +193,15 @@ bean_ram u_bean_ram (
 );
 
 
-    // === 豆子像素判断 ===
+    // === 露鹿脳脫脧帽脣脴脜脨露脧 ===
     wire is_bean_pixel = 
         (bean_display_data == 1'b1) &&
         (screen_col_addr >= grid_x * CELL_SIZE) && 
         (screen_col_addr < (grid_x + 1) * CELL_SIZE) &&
         (screen_row_addr >= grid_y * CELL_SIZE) &&
         (screen_row_addr < (grid_y + 1) * CELL_SIZE);
-// 添加计分和成功信号
-reg [2:0] score;      // 3位足够存0~5
+// 脤铆录脫录脝路脰潞脥鲁脡鹿娄脨脜潞脜
+reg [2:0] score;      // 3脦禄脳茫鹿禄麓忙0~5
 reg success;
 
 always @(posedge clk_25MHz or negedge rst_n) begin
@@ -194,7 +209,7 @@ always @(posedge clk_25MHz or negedge rst_n) begin
         score <= 3'd0;
         success <= 1'b0;
     end else begin
-        // 只要没成功且吃掉豆子就+1分
+        // 脰禄脪陋脙禄鲁脡鹿娄脟脪鲁脭碌么露鹿脳脫戮脥+1路脰
         if ((eat_state == WRITE) && !success) begin
             score <= score + 1'b1;
             if (score + 1'b1 >= 3'd5)
@@ -207,32 +222,32 @@ wire [11:0] success_pixel_rgb;
 wire [18:0] success_addr = screen_row_addr * IMAGE_WIDTH + screen_col_addr;
 
 game_over u_success_rom (
-    .clka(clk_25MHz),  // 始终使能
+    .clka(clk_25MHz),  // 脢录脰脮脢鹿脛脺
     .addra(success_addr),
     .douta(success_pixel_rgb)
 ); 
 
-// 生成success_addr
+// 脡煤鲁脡success_addr
 
 
    
 always @(posedge clk_25MHz or negedge rst_n)
 begin
     if(!rst_n)
-        pixel_rgb <= 12'b0;  // 复位时输出黑色
+        pixel_rgb <= 12'b0;  // 赂麓脦禄脢卤脢盲鲁枚潞脷脡芦
          else if (success) 
-        // 成功画面优先显示
+        // 鲁脡鹿娄禄颅脙忙脫脜脧脠脧脭脢戮
         pixel_rgb <= success_pixel_rgb; 
       else if (is_player_pixel)
-        pixel_rgb <= 12'h00F;  // 蓝色人物
+        pixel_rgb <= 12'h00F;  // 脌露脡芦脠脣脦茂
 else if (is_bean_pixel)
-        pixel_rgb <= 12'hFF0;  // 黄色豆子，填满整格
+        pixel_rgb <= 12'hFF0;  // 禄脝脡芦露鹿脳脫拢卢脤卯脗煤脮没赂帽
 
     else if(screen_col_addr >= 0 && screen_col_addr <= 639 && 
             screen_row_addr >= 0 && screen_row_addr <= 479)
-        pixel_rgb <= rom_data_out[11:0];  // 地图数据
+        pixel_rgb <= rom_data_out[11:0];  // 碌脴脥录脢媒戮脻
     else
-        pixel_rgb <= 12'b0;  // 黑色（消隐）
+        pixel_rgb <= 12'b0;  // 潞脷脡芦拢篓脧没脪镁拢漏
 
 end
 
