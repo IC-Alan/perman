@@ -6,7 +6,8 @@ module ps2(
 	output reg up,
 	output reg left,
 	output reg right,
-	output reg down
+	output reg down,
+	output reg enter
 	);
 	
 	localparam Break	= 8'hF0;
@@ -15,6 +16,7 @@ module ps2(
 	localparam Key_Down	= 8'h72;
 	localparam Key_Left = 8'h6B;
 	localparam Key_Right= 8'h74;
+	localparam Key_Enter= 8'h5A;
 
 	reg [1:0] ps2_clk_sync;
 	wire negedge_ps2_clk;
@@ -73,6 +75,7 @@ module ps2(
 			down		<= 1'b0;
 			left		<= 1'b0;
 			right		<= 1'b0;
+			enter		<= 1'b0;
 		end
 		else if (is_done) begin
 			if (shift_reg == Extend) begin
@@ -89,6 +92,7 @@ module ps2(
 						Key_Down:	down	<= !is_break;
 						Key_Left:	left	<= !is_break;
 						Key_Right:	right	<= !is_break;
+						Key_Enter:	enter	<= !is_break;
 						default: begin end
 					endcase
 					is_extend	<= 1'b0;
