@@ -31,10 +31,10 @@ module ps2(
 	end
 
 	reg [3:0] bit_count;
-	reg [7:0] shitf_reg;
+	reg [7:0] shift_reg;
 	wire is_done;
 
-	assign is_done negedge_ps2_clk && (bit_count == 4'd10);
+	assign is_done = negedge_ps2_clk && (bit_count == 4'd10);
 
 	// Serial 2 Parallel
 	always @(posedge clk or posedge rst) begin
