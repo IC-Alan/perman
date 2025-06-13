@@ -8,6 +8,10 @@ set_property IOSTANDARD LVCMOS18 [get_ports clk]
 set_property PACKAGE_PIN W13 [get_ports clrn]
 set_property IOSTANDARD LVCMOS18 [get_ports clrn]
 
+set_property PACKAGE_PIN N18 [get_ports ps2_clk]
+set_property IOSNANDARD LVCOMS33 [get_ports ps2_clk]
+set_property PACKAGE_PIN M19 [get_ports ps2_data]
+set_property IOSNANDARD LVCOMS33 [get_ports ps2_data]
 
  set_property PACKAGE_PIN N21 [get_ports {r[0]}]
 set_property PACKAGE_PIN N22 [get_ports {r[1]}]
