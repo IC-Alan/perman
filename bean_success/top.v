@@ -68,6 +68,7 @@ module top(
 
  //È¥¶¶¶¯
     wire [3:0] btn_debounced;
+	wire ctrl_up, ctrp_left, ctrl_right, ctrl_down, ctrl_enter;
 
 debounce_all u_debounce (
     .clk(clk_25MHz),
@@ -85,7 +86,8 @@ ps2 u_ps2(
 	.up(ctrl_up),
 	.left(ctrl_left),
 	.right(ctrl_right),
-	.down(ctrl_down)
+	.down(ctrl_down),
+	.enter(ctrl_enter)
 );
 
 // === ÈËÎïÒÆ¶¯Ä£¿é ===
