@@ -6,7 +6,7 @@
 
 参考：
 - vga 靠啊我忘了在哪参考的了 我找找
-- ps2 参考八十万禁军教头林黛玉的
+- ps2 参考八十万禁军教头林黛玉的 啊对我还改了改
 - 图片 用的前辈的图片（因为rom塞不下了只能换成1bit的了）
     https://github.com/JYJSXX/Verilog-Pacman-A-Star/blob/master/README.md
 
