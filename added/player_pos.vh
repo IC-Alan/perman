@@ -1,0 +1,4 @@
+`define PLAYER_INIT_X 170
+`define PLAYER_INIT_Y 130
+`define MONSTER_INIT_X 470
+`define MONSTER_INIT_Y 350
